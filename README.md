@@ -27,7 +27,7 @@ Every lab follows roughly the same pattern:
 |-----|-------|--------|
 | [F0](labs/00-lab-setup/) | Lab setup: Azure budget, network, admin access | In progress (Azure part done) |
 | F1 | Ticketing basics | Not started |
-| F2 | AD user accounts (resets, lockouts, new starters) | Not started |
+| [F2](labs/02-active-directory/) | Domain controller and first accounts | In progress |
 | F3 | Shared folders and permissions | Not started |
 | F4 | Group Policy | Not started |
 | F5 | DNS and DHCP | Not started |
@@ -52,8 +52,9 @@ kestrel-it-lab/
 ├── README.md
 ├── docs/
 │   └── standards/      naming, tagging and IP plan
-└── labs/
-    └── 00-lab-setup/   one folder per lab: README, evidence, incident write-ups
+└── labs/              one folder per lab: README, evidence, incident write-ups
+    ├── 00-lab-setup/
+    └── 02-active-directory/
 ```
 
 ## Keeping the cost down
