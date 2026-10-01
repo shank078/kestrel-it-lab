@@ -1,7 +1,7 @@
 # F2 · Domain controller and first accounts
 
 **Started:** 1 Oct 2026
-**Status:** In progress. The domain is up and working. Still to do: the break/fix exercise and the KB article.
+**Status:** In progress. The domain is up and working, and the break/fix is done. Still to do: the KB article.
 
 ## The request
 
@@ -109,6 +109,12 @@ I couldn't call the OU "Computers" because there's already a built-in **containe
 | `jsmith` can actually log in from a domain PC | Not tested yet. There's no client PC until a later lab |
 | RDP blocked from anywhere except my IP | Still not tested (carried over from F0) |
 
+## Break/fix 🔧
+
+Planned fault: the DC could resolve internal names but not internet names ("Windows Update failing, can't reach microsoft.com"). I took a baseline, made the fault, then worked it like a real ticket: reproduce, rule things out layer by layer, prove the cause against the baseline, fix, verify.
+
+Full write-up: [incident-02-dc-cant-resolve-internet-names.md](incident-02-dc-cant-resolve-internet-names.md)
+
 ## Things that went wrong 😅
 
 **1. I locked myself out of the server.** While setting the static IP inside Windows (on top of the static IP already set in Azure), the server dropped to an APIPA address (169.254.x.x) and I lost RDP. I got back in through Azure's **Serial Console**, a text console in the portal that works even when the network is broken, and fixed the IP settings from there.
@@ -140,7 +146,7 @@ That's because IPv4 and IPv6 have **separate** DNS settings, so the IPv4 command
 - **`.local` domain name.** Microsoft recommends a subdomain of a real domain (like `ad.kestrelfreight.com.au`). `.local` also clashes with how Macs find devices on the network, which will matter in the Mac lab. Keeping it for now and noting it here.
 - **Firewall profile shows "Private".** On a DC it should be "Domain". Need to check this.
 - **The DC has a public IP.** OK for a lab because RDP only accepts my IP, but a real DC would never face the internet.
-- Break/fix exercise and KB article.
+- KB article.
 
 ## Cost
 
@@ -148,4 +154,4 @@ Only runs during lab sessions and gets shut down after. Actual cost to be added 
 
 ## Next
 
-Break/fix, then the KB article.
+The KB article.
