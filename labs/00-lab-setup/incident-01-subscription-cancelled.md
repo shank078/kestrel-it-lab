@@ -27,7 +27,7 @@ Nothing was running yet, so there was no actual outage and no data lost. In a re
 
 ## Fix
 
-Waited for the cancellation to finish, then reactivated the subscription. Status went back to **Active**. Checked All resources afterwards: nothing missing (it was empty before too).
+Waited for the cancellation to finish. A **Reactivate** button then showed up on the subscription's Overview page, so I clicked that. No support ticket needed. Status went back to **Active**. Checked All resources afterwards: nothing missing (it was empty before too).
 
 ## Cause
 
