@@ -1,7 +1,7 @@
 # F2 · Domain controller and first accounts
 
 **Started:** 1 Oct 2026
-**Status:** In progress. The domain is up and working. Still to do: move the IP setting to the Azure side (see "Known issues"), the break/fix exercise and the KB article.
+**Status:** In progress. The domain is up and working. Still to do: the break/fix exercise and the KB article.
 
 ## The request
 
@@ -111,11 +111,13 @@ I couldn't call the OU "Computers" because there's already a built-in **containe
 
 ## Things that went wrong 😅
 
-**1. I locked myself out of the server.** I set the static IP inside Windows as well as in Azure, and lost RDP. I got back in through Azure's **Serial Console**, a text console in the portal that works even when the network is broken, and fixed the IP settings from there.
+**1. I locked myself out of the server.** While setting the static IP inside Windows (on top of the static IP already set in Azure), the server dropped to an APIPA address (169.254.x.x) and I lost RDP. I got back in through Azure's **Serial Console**, a text console in the portal that works even when the network is broken, and fixed the IP settings from there.
 
 ![After recovery](evidence/10-serial-console-ip-after-recovery.png)
 
-I didn't screenshot the broken state, only the result afterwards. Lesson: in Azure the IP is fixed **on the Azure network card only** and Windows stays on DHCP. Azure's DHCP always hands it the same reserved address. Setting it inside Windows is how you'd do it on a physical server, but in Azure it can break the next time Azure changes anything about the VM. (Fixing this properly is still to do, see below.)
+I didn't screenshot the broken state, only the result afterwards, and I didn't confirm the cause in the event logs. APIPA means Windows had no valid IP at all. It usually comes from either DHCP not answering or Windows detecting an IP conflict. It wasn't DNS: RDP connects straight to the IP, and the server wasn't even a DC yet at that point.
+
+Lesson: in Azure the IP only *needs* to be set on the Azure network card. Windows can stay on DHCP and Azure always hands it the same reserved address. Setting it in Windows too is how you'd do it on a physical server.
 
 **2. DNS pointed at itself in a confusing way.** After promotion, the DNS servers were `::1` and `127.0.0.1`, which are both "this computer" (IPv6 and IPv4). The promotion wizard sets that.
 
@@ -134,7 +136,7 @@ That's because IPv4 and IPv6 have **separate** DNS settings, so the IPv4 command
 
 ## Known issues / still to do
 
-- **Move the IP config to Azure.** Put Windows back on DHCP, and set DNS (10.10.1.4) on the Azure network card instead.
+- **IP is set in two places.** 10.10.1.4 is set in Azure *and* in Windows. They match, so it works, but if one ever changes and the other doesn't, the server drops off the network. Microsoft's advice for Azure is to set it in Azure only. Leaving it for now and keeping them in sync.
 - **`.local` domain name.** Microsoft recommends a subdomain of a real domain (like `ad.kestrelfreight.com.au`). `.local` also clashes with how Macs find devices on the network, which will matter in the Mac lab. Keeping it for now and noting it here.
 - **Firewall profile shows "Private".** On a DC it should be "Domain". Need to check this.
 - **The DC has a public IP.** OK for a lab because RDP only accepts my IP, but a real DC would never face the internet.
@@ -146,4 +148,4 @@ Only runs during lab sessions and gets shut down after. Actual cost to be added 
 
 ## Next
 
-Finish the IP fix, then break/fix and the KB article.
+Break/fix, then the KB article.
