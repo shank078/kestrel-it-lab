@@ -26,7 +26,7 @@ Every lab follows roughly the same pattern:
 | Lab | Topic | Status |
 |-----|-------|--------|
 | [F0](labs/00-lab-setup/) | Lab setup: Azure budget, network, admin access | Complete ✅ |
-| [F1](labs/01-service-desk/) | Service desk (Jira Service Management) | In progress |
+| [F1](labs/01-service-desk/) | Service desk (Jira Service Management) | Complete ✅ |
 | [F2](labs/02-active-directory/) | Domain controller and first accounts | Complete ✅ |
 | F3 | Shared folders and permissions | Not started |
 | F4 | Group Policy | Not started |
@@ -60,7 +60,7 @@ kestrel-it-lab/
 
 ## Keeping the cost down
 
-This is paid for out of my own pocket, so there's a budget alert at A$50 a month, VMs get shut down after every session, and anything I don't need gets deleted once the lab is written up. Total spent on Kestrel so far: **A$0**.
+This is paid for out of my own pocket, so there's a budget alert at A$50 a month, VMs get shut down after every session, and anything I don't need gets deleted once the lab is written up. The service desk runs on Jira's free plan. One thing I learned from my bill: a stopped VM still pays for its disk, so a VM I'm not using costs money just by existing.
 
 ---
 
