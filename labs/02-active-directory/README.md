@@ -1,7 +1,7 @@
 # F2 · Domain controller and first accounts
 
 **Started:** 1 Oct 2026
-**Status:** In progress. The domain is up and working, and the break/fix is done. Still to do: the KB article.
+**Status:** In progress. Built, tested, break/fix done, runbook written. Still to do: test the runbook procedures marked "not tested yet", then close out.
 
 ## The request
 
@@ -115,6 +115,10 @@ Planned fault: the DC could resolve internal names but not internet names ("Wind
 
 Full write-up: [incident-02-dc-cant-resolve-internet-names.md](incident-02-dc-cant-resolve-internet-names.md)
 
+## Runbook 📘
+
+Day-to-day tasks for the service desk (new starter, password reset, unlock, leaver, account checks), plus DNS troubleshooting and what to do if you can't RDP in: [runbook.md](runbook.md)
+
 ## Things that went wrong 😅
 
 **1. I locked myself out of the server.** While setting the static IP inside Windows (on top of the static IP already set in Azure), the server dropped to an APIPA address (169.254.x.x) and I lost RDP. I got back in through Azure's **Serial Console**, a text console in the portal that works even when the network is broken, and fixed the IP settings from there.
@@ -146,7 +150,7 @@ That's because IPv4 and IPv6 have **separate** DNS settings, so the IPv4 command
 - **`.local` domain name.** Microsoft recommends a subdomain of a real domain (like `ad.kestrelfreight.com.au`). `.local` also clashes with how Macs find devices on the network, which will matter in the Mac lab. Keeping it for now and noting it here.
 - **Firewall profile shows "Private".** On a DC it should be "Domain". Need to check this.
 - **The DC has a public IP.** OK for a lab because RDP only accepts my IP, but a real DC would never face the internet.
-- KB article.
+- Test the runbook procedures that are marked "not tested yet".
 
 ## Cost
 
@@ -154,4 +158,4 @@ Only runs during lab sessions and gets shut down after. Actual cost to be added 
 
 ## Next
 
-The KB article.
+Test the untested runbook procedures, then close out F2.
