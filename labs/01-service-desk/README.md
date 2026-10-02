@@ -1,7 +1,8 @@
 # F1 · Service desk (Jira Service Management)
 
 **Started:** 2 Oct 2026
-**Status:** In progress. The service desk is built and tested end to end, and the break/fix (INC-0004) and KB are done. Still to do: handover, retro and close-out.
+**Finished:** 3 Oct 2026
+**Status:** Complete. Built, tested end to end, break/fix done (INC-0004), KB written. Open items are under "Known issues".
 
 ## The request
 
@@ -169,6 +170,10 @@ KSD-3 (folder access) checked the service request targets (4h/24h). It also show
 - **A reply I posted went on the wrong ticket** (KSD-3 instead of KSD-1). Left an internal note on KSD-3 explaining it, the way you would at work.
 - **I assumed the automation was broken** when the SLA panel still showed ⏸. It wasn't: the page was stale. A full page reload showed the right state. Lesson: reload before deciding something's broken.
 - **I deleted the auto-close rule by accident** halfway through and rebuilt it.
+- **My closing reply on KSD-6 went in as an internal note** (yellow, with a lock), so James couldn't see it. I edited it to make it public. Lesson: check *Add internal note* vs *Reply to customer* before saving.
+
+  ![Closing reply as internal note](evidence/48-ksd6-closing-reply-posted-as-internal-note.png)
+- **A reply I pasted kept its formatting** and showed up as grey code boxes in the portal. Paste with ⌘⇧V (no formatting) next time.
 
 ## Known issues / follow-ups
 
@@ -181,6 +186,7 @@ KSD-3 (folder access) checked the service request targets (4h/24h). It also show
 - **KSD-2** (locked out) was raised from the wrong account. It was closed as a Duplicate of KSD-5, which was worked in F2 using the [F2 runbook](../02-active-directory/runbook.md).
 - **The customer-reply rule only reacts to the reporter.** If someone added to the ticket (a request participant) replies, the ticket stays in Waiting for customer.
 - **Auto-close rule:** first real run expected Monday 12 October (KSD-1). Not verified yet.
+- **James's display name** still shows as his email address in Jira.
 - Evidence gaps: no screenshot of the auto-close rule, the full resolution SLA settings, or the status-mapping screen when publishing the workflow.
 
 ## Break/fix 🔧
@@ -189,6 +195,11 @@ KSD-3 (folder access) checked the service request targets (4h/24h). It also show
 
 Full write-up: [incident-04-customer-replies-not-moving-tickets.md](incident-04-customer-replies-not-moving-tickets.md)
 
+KSD-6 was then resolved with a closing reply. This is the whole ticket as James sees it in the portal. My internal note about the incident doesn't show, but every status change does.
+
+![KSD-6 resolved, both SLAs met](evidence/49-ksd6-resolved-reply-public-slas-met.png)
+![KSD-6 customer view](evidence/50-ksd6-customer-view-resolved.png)
+
 ## KB 📘
 
 What to check, in order, when a customer replies and the ticket doesn't move: [kb-customer-replied-ticket-didnt-move.md](kb-customer-replied-ticket-didnt-move.md)
@@ -196,3 +207,41 @@ What to check, in order, when a customer replies and the ticket doesn't move: [k
 ## Cost
 
 A$0. Jira Service Management free plan.
+
+## Handover
+
+For whoever looks after the service desk next:
+
+- **Site:** `kestrel-it-lab.atlassian.net`, space **Kestrel IT Service Desk** (key KSD). Free plan, so up to 3 agents. I'm the only agent and admin.
+- **Customers:** the portal is restricted, so only people added as customers can raise tickets. Test customer: James Smith (`kestrel.jsmith.lab@gmail.com`), organisation *Kestrel Freight - Canberra*. Same email as `jsmith` in AD.
+- **Statuses:** use **Ask customer** when you're waiting on the customer (pauses the resolution clock) and **Wait on third party** when you're waiting on a vendor (the clock keeps running).
+- **SLAs:** incidents 1h / 8h, service requests 4h / 24h, on Canberra business hours (Mon–Fri 8:30–5:00, Labour Day added).
+- **Automation:** two rules. *Customer reply moves ticket to Waiting for support*, and *auto-close* (weekdays 7am, Resolved for 7+ days → Closed). If tickets get stuck, start with the rule's **Audit log** and the [KB](kb-customer-replied-ticket-didnt-move.md).
+- **Before editing a rule:** treat it as a change and test it on one ticket straight after (see INC-0004).
+- **When replying:** check you're on *Reply to customer*, not *Add internal note*.
+- **Open items:** see "Known issues" above. The auto-close rule hasn't been seen running yet.
+
+## Retro
+
+**What went well**
+- Taking one ticket (KSD-4) through every path found the reopen bug. Testing each part on its own wouldn't have.
+- In the break/fix I worked from the symptoms, not from what I knew I'd changed. The audit log showed exactly where the rule stopped.
+- Linking Jira and AD with James's email made F1 and F2 feel like one company.
+
+**What was hard**
+- **The automation fix.** Every run said Success, so it looked fine. What helped was opening the run and seeing which steps were missing.
+- **The workflow diagram.** Keeping track of which arrow goes from which status to which. Reading the From/To on every transition before saving helped.
+
+**What I'd do differently**
+- Plan the statuses and what pauses the clock **before** building, instead of fixing the template once tickets existed.
+- Set priority on every ticket.
+- Take screenshots as I go, so there are no evidence gaps.
+- Check internal note vs reply to customer every time.
+
+**What I learned**
+- Incidents and service requests need different targets.
+- Without a Resolution value, a "Done" ticket still counts as open.
+- A business-hours calendar and public holidays change when tickets are due.
+- Waiting for customer should pause the clock; waiting on a vendor shouldn't.
+- A green tick means the rule ran, not that it worked.
+- Fixing the cause doesn't fix the tickets already affected.
