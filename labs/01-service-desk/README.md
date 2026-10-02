@@ -1,7 +1,7 @@
 # F1 · Service desk (Jira Service Management)
 
 **Started:** 2 Oct 2026
-**Status:** In progress. The service desk is built and tested end to end. Still to do: a planned break/fix, a KB article, and the follow-ups listed at the bottom.
+**Status:** In progress. The service desk is built and tested end to end, and the break/fix (INC-0004) and KB are done. Still to do: handover, retro and close-out.
 
 ## The request
 
@@ -178,9 +178,20 @@ KSD-3 (folder access) checked the service request targets (4h/24h). It also show
 - **Emailed requests** still use the old simple workflow. Email isn't set up yet.
 - **Priority** isn't used by the SLAs, and I didn't set it consistently (KSD-4 affected the whole floor and should have been High).
 - Folder access approval was "confirmed by phone" in a note, not with Jira's Approvals feature.
-- **KSD-2** (locked out) is still open on purpose. I'll work it in a DC session using the [F2 runbook](../02-active-directory/runbook.md).
+- **KSD-2** (locked out) was raised from the wrong account. It was closed as a Duplicate of KSD-5, which was worked in F2 using the [F2 runbook](../02-active-directory/runbook.md).
+- **The customer-reply rule only reacts to the reporter.** If someone added to the ticket (a request participant) replies, the ticket stays in Waiting for customer.
 - **Auto-close rule:** first real run expected Monday 12 October (KSD-1). Not verified yet.
 - Evidence gaps: no screenshot of the auto-close rule, the full resolution SLA settings, or the status-mapping screen when publishing the workflow.
+
+## Break/fix 🔧
+
+**INC-0004: customer replies stopped moving tickets back to IT.** I changed the customer-reply rule's status condition to *Pending*, then worked it from the symptoms. The tricky part: every run still said **Success**, and no error email was sent. The audit log showed the run stopping at the status condition, and a Config change 15 minutes earlier showed when it started. Fixing the rule didn't rescue the ticket already missed, so I searched for every ticket in Waiting for customer (one, KSD-6), moved it back by hand and verified the fix with a new reply.
+
+Full write-up: [incident-04-customer-replies-not-moving-tickets.md](incident-04-customer-replies-not-moving-tickets.md)
+
+## KB 📘
+
+What to check, in order, when a customer replies and the ticket doesn't move: [kb-customer-replied-ticket-didnt-move.md](kb-customer-replied-ticket-didnt-move.md)
 
 ## Cost
 
