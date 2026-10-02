@@ -1,7 +1,8 @@
 # F2 · Domain controller and first accounts
 
 **Started:** 1 Oct 2026
-**Status:** In progress. Built, tested, break/fix done, runbook written. Still to do: test the runbook procedures marked "not tested yet", then close out.
+**Finished:** 2 Oct 2026
+**Status:** Complete. Built, tested, break/fix done, runbook written and every section tested on a real ticket. Open items are under "Known issues".
 
 ## The request
 
@@ -106,7 +107,10 @@ I couldn't call the OU "Computers" because there's already a built-in **containe
 | `nslookup` resolves the DC to 10.10.1.4 | ✅ Pass (17, 24) |
 | OUs created in the planned layout | ✅ Pass (19) |
 | `jsmith` created in Staff › Canberra | ✅ Pass (21) |
-| `jsmith` can actually log in from a domain PC | Not tested yet. There's no client PC until a later lab |
+| `jsmith` can actually log in from a domain PC | Not tested. There's no client PC until the Windows client lab |
+| Lockout policy works (10 attempts → locked) | ✅ Pass (36, 37) |
+| Unlock, password reset, disable/enable | ✅ Pass (42, 43, 46) |
+| DC health: AD, DNS, Netlogon, Kerberos running; dcdiag clean | ✅ Pass (47, 48) |
 | RDP blocked from anywhere except my IP | Still not tested (carried over from F0) |
 
 ## Break/fix 🔧
@@ -117,7 +121,79 @@ Full write-up: [incident-02-dc-cant-resolve-internet-names.md](incident-02-dc-ca
 
 ## Runbook 📘
 
-Day-to-day tasks for the service desk (new starter, password reset, unlock, leaver, account checks), plus DNS troubleshooting and what to do if you can't RDP in: [runbook.md](runbook.md)
+Day-to-day tasks for the service desk (new starter, password reset, unlock, leaver, account checks), plus DNS troubleshooting and what to do if you can't RDP in: [runbook.md](runbook.md). Every section has been tested; see the next section.
+
+## Proving the runbook on a real ticket (KSD-5) 🔒
+
+Most of the runbook was written but not tested. Instead of running the commands one by one, I worked a proper lockout ticket from start to finish and tested each procedure as the ticket needed it.
+
+### Linking Jira and AD
+
+The first test tickets came from a real person's Gmail, which didn't match any AD account. I made a dedicated lab inbox for James Smith, added it to Jira as a customer, and put the same address on his AD account. Now the service desk and AD are linked by email, the way they would be at a real company.
+
+![jsmith email set](evidence/30-jsmith-email-linked-to-jira.png)
+
+### The domain couldn't lock anyone out
+
+Before testing an unlock, I checked the lockout policy. **LockoutThreshold was 0**, which means never lock, no matter how many wrong passwords. That's the default on a new domain. So a "locked out" ticket here would really have been a wrong or expired password.
+
+![Policy before](evidence/31-password-policy-before-lockout-0.png)
+
+I set it in the **Default Domain Policy** GPO, not with PowerShell. The GPO is the master copy and already defined the threshold as 0, so a PowerShell change would have been put back at the next policy refresh. Windows suggested 10 attempts, 10 minutes and 10 minutes, and I kept its suggestions.
+
+![GPO before](evidence/32-gpo-lockout-policy-before.png)
+![GPO after](evidence/33-gpo-lockout-policy-after.png)
+![Applied](evidence/34-kadmin-rid500-and-policy-applied.png)
+
+Something I found along the way: `kadmin` has a SID ending in **-500**, so it's the domain's built-in Administrator, just renamed by Azure. "Allow Administrator account lockout" is now on, so 10 bad RDP passwords would lock me out too.
+
+### Making a real lockout
+
+Baseline first (not locked, 0 bad passwords). Then I tried to RDP to the DC as `KESTREL\jsmith` from my Mac with 10 wrong passwords. Staff can't log on to a DC anyway, but the password is checked before that, so every wrong one counted.
+
+![Baseline](evidence/35-jsmith-baseline-before-lockout.png)
+![Locked](evidence/36-rdp-as-jsmith-account-locked-0xd07.png)
+![badPwdCount 10](evidence/37-jsmith-locked-badpwdcount-10.png)
+
+### Finding where the bad passwords came from
+
+Event **4740** (account locked out) said *who* and *when*, but the "Caller Computer Name" was blank. That's common when the attempts come from a Mac or over RDP from the internet. Event **4625** (failed logon) had the answer: 10 attempts, about 4 seconds apart, all from one IP (mine, blacked out), logon type 3. On a company network that IP would lead to the device.
+
+![4740](evidence/38-event-4740-lockout.png)
+![4625](evidence/39-event-4625-failed-logons-source-ip.png)
+
+The server clock was on UTC (Azure's default), so the event times were 10 hours off from Jira. I changed the server's time zone to Canberra. That only changes how times are *shown*; Windows still stores everything in UTC.
+
+### The ticket
+
+James raised **KSD-5** from his own account. The older KSD-2 (raised from the wrong account) was linked and closed as a **Duplicate**.
+
+![KSD-5](evidence/40-ksd5-raised-by-james.png)
+
+By the time I checked, the 10 minutes had passed and he'd unlocked himself. `LockedOut` was False, but the lockout time and `badPwdCount 10` were still showing. So **a lockout time on its own doesn't mean someone is still locked**. Always read `LockedOut`.
+
+![Self-unlocked](evidence/41-self-unlocked-after-10-min.png)
+
+I locked him again and unlocked him by hand. A manual unlock clears everything: LockedOut False, badPwdCount 0, and no lockout time.
+
+![Manual unlock](evidence/42-manual-unlock-counter-reset.png)
+
+He wasn't sure which password was current, so I reset it to a temporary one (typed with `Read-Host -AsSecureString` so it isn't on screen or in history) and ticked "must change at next logon". Trying it over RDP proved both: the password was right, and Windows wanted it changed.
+
+![Must change password](evidence/43-temp-password-must-change-0x1207.png)
+![KSD-5 resolved](evidence/44-ksd5-resolved-linked-duplicate.png)
+
+KSD-5 was resolved in 21 minutes. Both SLAs stopped at the same moment, because I didn't send James a quick "I'm on it" reply first. Next time: assign, acknowledge, *then* work it.
+
+### Leaver test and health check
+
+I recorded his groups, disabled him (Enabled False), then re-enabled him, since he's the only test user. I also compared him with kadmin, who's in every top admin group.
+
+![kadmin groups](evidence/45-kadmin-admin-groups.png)
+![Leaver test](evidence/46-leaver-enable-then-disable.png)
+![Services](evidence/47-health-check-services.png)
+![dcdiag](evidence/48-dcdiag-exit-code-0.png)
+
 
 ## Things that went wrong 😅
 
@@ -150,12 +226,44 @@ That's because IPv4 and IPv6 have **separate** DNS settings, so the IPv4 command
 - **`.local` domain name.** Microsoft recommends a subdomain of a real domain (like `ad.kestrelfreight.com.au`). `.local` also clashes with how Macs find devices on the network, which will matter in the Mac lab. Keeping it for now and noting it here.
 - **Firewall profile shows "Private".** On a DC it should be "Domain". Need to check this.
 - **The DC has a public IP.** OK for a lab because RDP only accepts my IP, but a real DC would never face the internet.
-- Test the runbook procedures that are marked "not tested yet".
+- **Daily admin uses the built-in Administrator** (`kadmin`, RID 500), which is in every top admin group (Domain, Enterprise and Schema Admins). Planned: a separate named admin account, and emptying Enterprise/Schema Admins (admin access lab).
+- **No client PC yet.** The lockout was made with RDP attempts against the DC, and James couldn't actually change his password (the DC refuses staff logons). A domain-joined PC comes in the Windows client lab.
+- **jsmith still has "must change password at next logon" set**, from the reset test.
 
 ## Cost
 
 Only runs during lab sessions and gets shut down after. Actual cost to be added from Cost Management.
 
-## Next
+## Handover
 
-Test the untested runbook procedures, then close out F2.
+For whoever looks after the DC next:
+
+- **Server:** `vm-kestrel-dc01`, 10.10.1.4, domain `kestrel.local`. Shut down (deallocated) between sessions to save money.
+- **Admin:** `KESTREL\kadmin` is the built-in Administrator (RID 500) and is in every top admin group. 10 wrong passwords locks it for 10 minutes. If that happens, wait it out or use the Serial Console.
+- **Lockout policy:** 10 attempts, 10 minutes, set in the Default Domain Policy. Change it there, not with PowerShell.
+- **Test user:** `jsmith` (James Smith, Staff › Canberra), email `kestrel.jsmith.lab@gmail.com`, linked to the same Jira customer. Enabled, with a temporary password and "must change at next logon" set.
+- **DNS forwarder:** 8.8.8.8 with root hints on. That's the known-good baseline from INC-0002.
+- **Server time zone:** Canberra.
+- **Day-to-day tasks:** [runbook.md](runbook.md). Every section has now been tested.
+- **Open items:** see "Known issues" above.
+
+## Retro
+
+**What went well**
+- Working a real ticket (KSD-5) to test the runbook was much better than running commands on their own. Every step had a reason.
+- Checking before changing: the account state before unlocking, the policy before assuming a lockout was possible, a baseline before the DNS break/fix. It caught the threshold-0 problem straight away.
+- The break/fix (INC-0002) was proven against a baseline, not guessed.
+
+**What I'd do differently**
+- Set the static IP in Azure only and leave Windows on DHCP. Setting it in both places is what I was doing when I lost RDP.
+- Choose a proper domain name (like `ad.kestrelfreight.com.au`) instead of `.local`, and set the server's time zone on day one.
+- Use a dedicated admin account from the start, not the built-in Administrator.
+- Send the customer a quick acknowledgement before working a ticket, so first response actually measures response time.
+
+**What I learned**
+- GPOs are the master copy. Change domain settings at the source.
+- Lockouts are counted per account on the DC, from any device.
+- 4740 tells you who got locked out and when; 4625 tells you where from.
+- Self-unlock vs manual unlock leave the account looking different.
+- When PowerShell runs several commands together, the first one decides the table columns, so check results on their own.
+

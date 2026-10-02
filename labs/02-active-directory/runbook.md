@@ -8,15 +8,15 @@ For the service desk and whoever looks after `vm-kestrel-dc01`. Everything here 
 | **Domain** | `kestrel.local` |
 | **Admin account** | `KESTREL\kadmin` |
 | **User OUs** | `Staff › Canberra`, `Staff › Sydney` |
-| **Last updated** | 2 Oct 2026 |
+| **Last updated** | 2 Oct 2026 (all sections tested) |
 
-Each procedure says whether I've actually run it in the lab. If it says "not tested yet", treat it with care.
+Each procedure says how it was tested in the lab.
 
 ---
 
 ## 1. New starter: create a user
 
-**Tested in lab:** Yes (`jsmith`), but with the password typed into the command. The version below is the safer way.
+**Tested in lab:** Yes (`jsmith`, F2). I typed the password into the command that time; the version below is the safer way.
 
 ```powershell
 New-ADUser -Name "Jane Citizen" -GivenName "Jane" -Surname "Citizen" `
@@ -42,7 +42,7 @@ It should say `Enabled: True` and show the right OU.
 
 ## 2. Forgotten password: reset it
 
-**Tested in lab:** Not tested yet.
+**Tested in lab:** Yes (KSD-5). Checked with `Get-ADUser jsmith -Properties pwdLastSet`: `pwdLastSet` = 0 means "must change at next logon". Logging in with the temporary password over RDP returned *"you must change your password before signing in"* (0x1207), which proved both the password and the flag.
 
 First, check you're talking to the real person (follow the identity check process). Then:
 
@@ -57,7 +57,7 @@ Give them the temporary password by phone or in person, never in the ticket.
 
 ## 3. "I'm locked out": unlock the account
 
-**Tested in lab:** Not tested yet. See the note below.
+**Tested in lab:** Yes (KSD-5, a real lockout from 10 bad RDP passwords).
 
 See who's locked out:
 
@@ -74,7 +74,19 @@ Get-ADUser jcitizen -Properties LockedOut | Select-Object Name, LockedOut
 
 `LockedOut` should now be `False`.
 
-> **Note:** a brand new domain might not lock anyone out at all, because the lockout threshold can be 0 (never lock). Check it with `Get-ADDefaultDomainPasswordPolicy` and look at `LockoutThreshold`. Setting a proper lockout policy is part of the Group Policy lab.
+> **Kestrel's policy:** 10 bad passwords locks the account for 10 minutes, then it unlocks itself (set in the Default Domain Policy). Check it with `Get-ADDefaultDomainPasswordPolicy`.
+>
+> **Already unlocked?** After 10 minutes `LockedOut` shows False, but `AccountLockoutTime` and `badPwdCount` still show the old values. Read `LockedOut`, not the lockout time. A manual unlock clears all three.
+
+**Where are the bad passwords coming from?** Event 4740 says who was locked out and when. Event 4625 (failed logon) shows the source IP:
+
+```powershell
+Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 10 |
+  ForEach-Object { $x=[xml]$_.ToXml(); [pscustomobject]@{
+    Time   = $_.TimeCreated
+    User   = ($x.Event.EventData.Data | ? Name -eq 'TargetUserName').'#text'
+    Source = ($x.Event.EventData.Data | ? Name -eq 'IpAddress').'#text' } } | Format-Table
+```
 
 If the same person keeps getting locked out, the cause is usually an old password saved somewhere: a phone's email app, a mapped drive, or a second PC. Unlocking alone won't fix that.
 
@@ -82,7 +94,7 @@ If the same person keeps getting locked out, the cause is usually an old passwor
 
 ## 4. Leaver: disable the account
 
-**Tested in lab:** Not tested yet.
+**Tested in lab:** Yes (jsmith disabled, checked, re-enabled).
 
 Disable it, don't delete it. A disabled account can be turned back on if someone left by mistake, and their group memberships are still there to check.
 
@@ -101,7 +113,7 @@ Get-ADPrincipalGroupMembership -Identity jcitizen | Select-Object Name
 
 ## 5. Look up a user's account status
 
-**Tested in lab:** Not tested yet.
+**Tested in lab:** Yes (KSD-5, before and after the lockout).
 
 The first thing to check on most "can't log in" tickets:
 
@@ -151,7 +163,7 @@ Then run steps 1 and 2 again to confirm.
 
 ## 7. Quick DC health check
 
-**Tested in lab:** Not tested yet.
+**Tested in lab:** Yes. All four services running, dcdiag exit code 0.
 
 Worth doing after any change or restart:
 
@@ -161,7 +173,7 @@ dcdiag /q
 ```
 
 - All four services should be `Running`. NTDS is AD itself, Kdc handles Kerberos logins, and Netlogon is what PCs talk to when they log in.
-- `dcdiag /q` only prints errors. No output means no errors found.
+- `dcdiag /q` only prints errors. No output means no errors found. To prove it ran: `dcdiag /q; "exit code: $LASTEXITCODE"` (0 = clean).
 
 ---
 
