@@ -26,7 +26,7 @@ Every lab follows roughly the same pattern:
 | Lab | Topic | Status |
 |-----|-------|--------|
 | [F0](labs/00-lab-setup/) | Lab setup: Azure budget, network, admin access | In progress (Azure part done) |
-| F1 | Ticketing basics | Not started |
+| [F1](labs/01-service-desk/) | Service desk (Jira Service Management) | In progress |
 | [F2](labs/02-active-directory/) | Domain controller and first accounts | In progress |
 | F3 | Shared folders and permissions | Not started |
 | F4 | Group Policy | Not started |
@@ -54,6 +54,7 @@ kestrel-it-lab/
 │   └── standards/      naming, tagging and IP plan
 └── labs/              one folder per lab: README, evidence, incident write-ups
     ├── 00-lab-setup/
+    ├── 01-service-desk/
     └── 02-active-directory/
 ```
 
