@@ -1,7 +1,8 @@
 # F0 · Lab setup (Azure foundation)
 
 **Started:** 1 Oct 2026
-**Status:** Azure build done. The break/fix part has to wait until there's a server to connect to (F2).
+**Finished:** 2 Oct 2026
+**Status:** Complete. Built, tested, break/fix done (INC-0003) once the DC existed, KB written.
 
 ## The request
 
@@ -96,7 +97,7 @@ I used one NSG for both subnets to keep it simple. A bigger company would probab
 | VNet is 10.10.0.0/16 with both subnets | ✅ Pass |
 | RDP rule source is my IP, not "Any" | ✅ Pass |
 | NSG attached to both subnets | ✅ Pass |
-| RDP actually connects from home and is blocked from anywhere else | Not tested yet. Needs a VM, so this happens in F2 |
+| RDP actually connects from home and is blocked from anywhere else | ✅ Pass. Tested during INC-0003, once the DC existed: with the rule pointing elsewhere, my own IP counted as "anywhere else" and was blocked |
 
 ## Things that went wrong 😅
 
@@ -114,9 +115,15 @@ I used one NSG for both subnets to keep it simple. A bigger company would probab
 - Tag typos as above.
 - Private subnet turned off on purpose (cost).
 
-## Break/fix (still to do)
+## Break/fix 🔧
 
-The plan for F0's break/fix: my home IP changes (ISPs do this), the RDP rule stops matching, and I get locked out. I'll work out why from the symptoms and fix the rule. It needs a VM to connect to, so I'll do it once the domain controller is up in F2 and add the write-up here.
+Done on 2 Oct, once the domain controller existed. Ticket: *"the contractor can't get into the server, nothing's been changed"*. I pointed the RDP rule at an address that wasn't mine, then worked it from the symptoms: a 0x204 timeout (not an account error), VM running, same public IP, my IP unchanged, so the NSG rule was the only thing left.
+
+Full write-up: [incident-03-cant-rdp-to-dc.md](incident-03-cant-rdp-to-dc.md)
+
+## KB 📘
+
+What to check, in order, when RDP to the DC fails: [kb-cant-rdp-to-azure-vm.md](kb-cant-rdp-to-azure-vm.md)
 
 ## What I took away from this
 
@@ -130,6 +137,18 @@ The plan for F0's break/fix: my home IP changes (ISPs do this), the RDP rule sto
 
 A$0. Nothing built in F0 is charged (resource groups, VNets, subnets, NSGs and budgets are all free).
 
-## Next
+## Handover
 
-F1: setting up a ticketing system, so every fault from here on gets logged properly. Then F2: Kestrel's first server, the domain controller.
+- **Budget:** `budget-kestrel-lab-monthly`, A$50/month, with three actual-cost alerts and one forecast alert. It warns; it doesn't stop anything.
+- **Network:** `vnet-kestrel-ause` 10.10.0.0/16, with `snet-servers` (10.10.1.0/24) and `snet-clients` (10.10.2.0/24). Both use `nsg-kestrel-ause`.
+- **Admin access:** RDP only, from one home IP (rule `Allow-RDP-MyIP`, priority 100). If your home IP changes, update that rule to the new home IP only. See the KB.
+- **Delete lock** on `rg-kestrel-core-aue`.
+- **Known gaps:** tag typos, the resource group name ends in `-aue`, private subnet is off (all under "Known differences from the plan").
+
+## Retro
+
+**What went well:** budget and forecast alerts before anything was built, and a default-deny NSG with exactly one door open. The break/fix proved that door only opens for my IP.
+
+**What I'd do differently:** read the page title before clicking (that's how I cancelled the subscription and put the lock on the wrong group). In the break/fix, prove the cause with IP flow verify before fixing it, instead of fixing it as soon as I was fairly sure.
+
+**What I learned:** "validation passed" isn't the same as "correct". Costs keep running on disks and IPs even when the VM is off. A timeout points at the network, while an instant refusal points at the account.
