@@ -27,7 +27,7 @@ Every lab follows roughly the same pattern:
 |-----|-------|--------|
 | [F0](labs/00-lab-setup/) | Lab setup: Azure budget, network, admin access | In progress (Azure part done) |
 | [F1](labs/01-service-desk/) | Service desk (Jira Service Management) | In progress |
-| [F2](labs/02-active-directory/) | Domain controller and first accounts | In progress |
+| [F2](labs/02-active-directory/) | Domain controller and first accounts | Complete ✅ |
 | F3 | Shared folders and permissions | Not started |
 | F4 | Group Policy | Not started |
 | F5 | DNS and DHCP | Not started |
