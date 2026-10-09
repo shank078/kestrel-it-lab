@@ -28,7 +28,7 @@ Every lab follows roughly the same pattern:
 | [F0](labs/00-lab-setup/) | Lab setup: Azure budget, network, admin access | Complete ✅ |
 | [F1](labs/01-service-desk/) | Service desk (Jira Service Management) | Complete ✅ |
 | [F2](labs/02-active-directory/) | Domain controller and first accounts | Complete ✅ |
-| F3 | Shared folders and permissions | Not started |
+| [F3](labs/03-file-shares/) | Shared folders and permissions | Complete ✅ |
 | F4 | Group Policy | Not started |
 | F5 | DNS and DHCP | Not started |
 | F6 | Windows client troubleshooting | Not started |
@@ -55,7 +55,8 @@ kestrel-it-lab/
 └── labs/              one folder per lab: README, evidence, incident write-ups
     ├── 00-lab-setup/
     ├── 01-service-desk/
-    └── 02-active-directory/
+    ├── 02-active-directory/
+    └── 03-file-shares/
 ```
 
 ## Keeping the cost down
